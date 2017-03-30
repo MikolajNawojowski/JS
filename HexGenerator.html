@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<script src='http://d3js.org/d3.v3.min.js'></script>
+<body>
+<script>
+
+var _s32 = (Math.sqrt(3)/2);
+//parametry wskaznika bez myszki
+var R_NORMAL = 2.5;
+var POINTER_OPACITY_NORMAL = 0.1;
+//parametry wskaznika po najechaniu myszka
+var R_MOUSE_OVER = 8;
+var POINTER_OPACITY_MOUSE_OVER = 1;
+
+//parametr sluzacy do ustalenie poczatkowej przezroczystosci
+var opacityPar = 1;
+
+//dlugosc boku heksa/kwadratu
+var A = 30;
+//wspolrzedne poczatkowe heksa
+var xDiff = 850;
+var yDiff = 450;
+
+//dane naroznikow hexa
+var pointHexData = [[A+xDiff, 0+yDiff], [A/2+xDiff, A*_s32+yDiff], [-A/2+xDiff, A*_s32+yDiff], [-A+xDiff, 0+yDiff],[-A/2+xDiff, -A*_s32+yDiff], [A/2+xDiff, -A*_s32+yDiff]];
+
+//dane wskaznikow do tworzenia heksow
+var pointerHexData = [{x: A/2+xDiff, y: A*_s32+yDiff}, {x: -A/2+xDiff, y: A*_s32+yDiff}, {x: -A/2+xDiff, y: -A*_s32+yDiff}, {x: A/2+xDiff, y: -A*_s32+yDiff}, {x: -A+xDiff, y: yDiff}, {x: A+xDiff, y: yDiff}];
+
+//kontenery na reszte svg
+var svgContainer = d3.select("body").append("svg").attr("width", 3500).attr("height", 2000);
+var hexGroup = svgContainer.append("g");
+
+//tworzenie pierwszego heksa
+var hexAttributes = hexGroup.selectAll("path.area").data([pointHexData]).enter().append("path").style("fill", getRandomColor()).attr("d", d3.svg.line());
+
+//wskazniki sluzace do tworzenia hexow
+var circleHexAttributes = hexGroup.selectAll("circle").data(pointerHexData).enter().append("circle").attr("cx", function(d) {return d.x}).attr("cy",function(d) {return d.y}).attr("r", R_NORMAL).style("stroke-width", 2)  .style("stroke", "black").style("opacity", POINTER_OPACITY_NORMAL)	.on("mouseover", handleMouseOver).on("mouseout", handleMouseOut).on("click", click);
+	
+//Kwadrat do kasowania wskaznikow
+var rectangle = svgContainer.append("rect").attr("x", 138).attr("y", 95).attr("width", 20).attr("height", 20).on("mouseover", handleMouseOverCircle).on("mouseout", handleMouseOutCircle).on("click", deleteAllCircles);
+//Kwadrat do odswiezania strony
+var rectangle2 = svgContainer.append("rect").attr("x", 170).attr("y", 95).attr("width", 20).attr("height", 20).on("mouseover", handleMouseOverCircle).on("mouseout", handleMouseOutCircle).on("click", reloadPage);
+
+//funkcja, kiedy myszka na wskazniku
+function handleMouseOver(d) { 
+	d3.select(this).attr("fill", "red");
+	d3.select(this).attr("r", R_MOUSE_OVER);
+	d3.select(this).style("opacity", POINTER_OPACITY_MOUSE_OVER);
+}
+
+//funkcja kiedy myszka zeszla ze wskaznika	  
+function handleMouseOut(d) {
+	d3.select(this).attr("fill", "black");
+	d3.select(this).attr("r", R_NORMAL);
+	d3.select(this).style("opacity", POINTER_OPACITY_NORMAL);
+}
+
+//funkcja, kiedy myszka na kwadracie
+function handleMouseOverCircle(d) { d3.select(this).attr("fill", "red");}
+
+//funkcja kiedy myszka zeszla z kwadratu	  
+function handleMouseOutCircle(d) {d3.select(this).attr("fill", "black");}
+
+//funkcja po kliknieciu wskaznika
+function click(d) {
+	for(d = 0; d < 1; d++) {
+		//nowe punkty wyznaczone na podstawie kliknietego punktu 
+		var randomNumber1 = Math.floor(Math.random()*pointerHexData.length);
+		var newXDiff = pointerHexData[randomNumber1].x;
+		//parseInt(d3.select(this).attr("cx"));
+		var newYDiff = pointerHexData[randomNumber1].y;
+		//parseInt(d3.select(this).attr("cy"));	
+		for(b = 1; b < 2; b++) {
+			if( (Math.abs(newXDiff - xDiff) > (A*b)/2) || ((Math.abs(newYDiff - yDiff) > (A*b)/2)) ) {
+				//wspolrzedne 6 punktow (wskaznikow)
+				var newPointerHexData = [{x: newXDiff, y: A+newYDiff}, {x: -A*_s32+newXDiff, y: A/2+newYDiff}, {x: -A*_s32+newXDiff, y: -A/2+newYDiff}, {x: newXDiff, y: -A+newYDiff}, {x: A*_s32+newXDiff, y: -A/2+newYDiff}, {x: A*_s32+newXDiff, y: A/2+newYDiff}];
+				//wspolrzedne hexa
+				var pointNewData = [[A+newXDiff, 0+newYDiff], [A/2+newXDiff, A*_s32+newYDiff], [-A/2+newXDiff, A*_s32+newYDiff], [-A+newXDiff, 0+newYDiff],[-A/2+newXDiff, -A*_s32+newYDiff], [A/2+newXDiff, -A*_s32+newYDiff]];
+				//nowa tablica ze wszystkimi wskaznikami
+				pointerHexData.push.apply(pointerHexData, newPointerHexData);
+				//tworzenie heksa (i obrocenie go o kat 90)
+				var hexAttributes = hexGroup.selectAll("path.area").data([pointNewData]).enter().append("path").style("fill", getRandomColor()).attr("d", d3.svg.line()).style("opacity", opacityPar).attr("transform", function(d) { return "rotate(90,"+newXDiff+","+newYDiff+")";});
+				//tworzenie wskaznikow
+				var circleHexAttributes = hexGroup.selectAll("circle").data(pointerHexData).enter().append("circle").attr("cx", function(d) {return d.x}).attr("cy",function(d) {return d.y}).attr("r", R_NORMAL).style("stroke-width", 2)  .style("stroke", "black").style("opacity", POINTER_OPACITY_NORMAL).on("mouseover", handleMouseOver).on("mouseout", handleMouseOut).on("click", click);
+				//zmiana przezroczystosci w losowy sposob co krok
+				opacityPar = Math.random() + 0.1;
+				//losowy srodek heksa
+				var randomCenter = [{x: 0, y: A}, {x: 0, y: -A}, {x: -A*_s32, y: A/2}, {x: A*_s32, y: A/2}, {x: -A*_s32, y: -A/2}, {x: A*_s32, y: -A/2}];
+				randomNumber = Math.floor(Math.random()*randomCenter.length);
+				newXDiff += randomCenter[randomNumber].x;
+				newYDiff += randomCenter[randomNumber].y;
+			} else {
+				d -= 1;
+				break;
+			}
+		}
+	}
+	//usuwa uzyty wskaznik
+	d3.select(this).remove();
+}
+
+//funkcje do usuwania wszystkich wskaznikow
+function deleteAllCircles(d) {hexGroup.selectAll("circle").remove();}
+
+//funkcja dajaca losowy kolor
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+//funkcja do odswiezenie strony
+function reloadPage() {location.reload();}
+
+Array.min = function( array ){return Math.min.apply( Math, array );}
+	
+</script>
+</body>
+</html>

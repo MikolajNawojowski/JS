@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<script src='http://d3js.org/d3.v3.min.js'></script>
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.0-rc.2/angular.min.js"></script>
+<body bgcolor="#93bf8d">
+<script>
+
+	Object.size = function(obj) {
+		var size = 0, key;
+		for (key in obj) {
+			if (obj.hasOwnProperty(key)) size++;
+		}
+		return size;
+	};
+
+	class tree {
+		constructor(radius, color, cx, cy) {
+			this.radius = radius;
+			this.color = color;
+			this.cx = cx;
+			this.cy = cy;
+		}
+	}
+	
+	class bench {
+		constructor(x, y, width, height, color) {
+			this.height = height;
+			this.width = width;
+			this.color = color;
+			this.x = x;
+			this.y = y;
+		}
+	}
+	
+	var app = angular.module('myApp', []);
+		app.controller('myCtrl', function($scope) {
+		  $scope.rules = ["tree", "lake", "bench", "monument", "path"];
+		  $scope.rule = "tree"
+		  $scope.radius = 50
+		  $scope.length = 50
+		  $scope.height = 50
+		  $scope.radiuses = [25, 50, 75, 100, 125, 150]
+		  $scope.lengths = [25, 50, 75, 100, 125, 150]
+		  $scope.heights = [25, 50, 75, 100, 125, 150]
+
+		var trees = [];
+		var jeziora = [];
+		var monuments = [];
+		var benches = [];
+		var paths = [];
+		var Gardens = [{"treesInGarden": trees, "benchesInGarden": benches, "monumentsInGarden": monuments, "lakesInGarden": jeziora, "pathsInGarden": paths}];
+
+		//kontenery na reszte svg
+		var svgContainer = d3.select("body").append("svg").attr("width",2000).attr("height", 1500);
+		//zmienna i wywolanie funkcji tworzenia elementow ogrodu
+		var coordinates = [0,0];
+		d3.select('svg').on('click', getMouseXY);
+			
+		//funkcje sluzace do dodawania pozycji po kliknieciu myszka
+		function getMouseXY() {
+			if($scope.rule == "tree") {
+					coordinates = d3.mouse(this);
+					trees.push(new tree($scope.radius, "#516B1E", coordinates[0],coordinates[1]));
+					var i = (Object.size(Gardens[0].treesInGarden))-1;
+					var hexGroup = svgContainer.append("g");
+					var circle = hexGroup.selectAll("circle").data(Gardens).enter().append("circle")
+						.attr("cx", function(d) {return d.treesInGarden[i].cx;})
+						.attr("cy", function(d) {return d.treesInGarden[i].cy;})
+						.attr("r", function (d) { return d.treesInGarden[i].radius; })
+						.style("fill", function(d) { return d.treesInGarden[i].color; });
+			} else if ($scope.rule == "lake") {
+					coordinates = d3.mouse(this);
+					jeziora.push(new tree($scope.radius, "#2D78B1", coordinates[0],coordinates[1]));
+					var i = (Object.size(Gardens[0].lakesInGarden))-1;
+					var hexGroup = svgContainer.append("g");
+					var circle = hexGroup.selectAll("circle").data(Gardens).enter().append("circle")
+						.attr("cx", function(d) {return d.lakesInGarden[i].cx;})
+						.attr("cy", function(d) {return d.lakesInGarden[i].cy;})
+						.attr("r", function (d) { return d.lakesInGarden[i].radius; })
+						.style("fill", function(d) { return d.lakesInGarden[i].color; });
+			} else if ($scope.rule == "bench") {
+					coordinates = d3.mouse(this);
+					benches.push(new bench(coordinates[0],coordinates[1], $scope.length, $scope.height, "#443A25"));
+					var i = (Object.size(Gardens[0].benchesInGarden))-1;
+					var hexGroup = svgContainer.append("g");
+					var rectangle = hexGroup.selectAll("rect").data(Gardens).enter().append("rect")
+						.attr("x", function(d) {return d.benchesInGarden[i].x;})
+						.attr("y", function(d) {return d.benchesInGarden[i].y;})
+						.attr("width", function (d) { return d.benchesInGarden[i].width; })
+						.attr("height", function (d) { return d.benchesInGarden[i].height; })
+						.style("fill", function(d) { return d.benchesInGarden[i].color; });
+			} else if ($scope.rule == "monument") {
+					coordinates = d3.mouse(this);
+					monuments.push([new tree($scope.radius, "black", coordinates[0]+$scope.height/2, coordinates[1]+$scope.height/2), new bench(coordinates[0], coordinates[1], $scope.height, $scope.height, "#9D9D9D")]);
+					var i = (Object.size(Gardens[0].monumentsInGarden))-1;
+					var j = (Object.size(Gardens[0].monumentsInGarden[i])) - 1;
+					var hexGroup = svgContainer.append("g");
+					var rectangle = hexGroup.selectAll("rect").data(Gardens).enter().append("rect")
+						.attr("x", function(d) {return d.monumentsInGarden[i][j].x;})
+						.attr("y", function(d) {return d.monumentsInGarden[i][j].y;})
+						.attr("width", function (d) { return d.monumentsInGarden[i][j].width; })
+						.attr("height", function (d) { return d.monumentsInGarden[i][j].height; })
+						.style("fill", function(d) { return d.monumentsInGarden[i][j].color; });
+					j = (Object.size(Gardens[0].monumentsInGarden[i])) - 2;
+					var hexGroup = svgContainer.append("g");
+					var circle = hexGroup.selectAll("circle").data(Gardens).enter().append("circle")
+						.attr("cx", function(d) {return d.monumentsInGarden[i][j].cx;})
+						.attr("cy", function(d) {return d.monumentsInGarden[i][j].cy;})
+						.attr("r", function (d) { return d.monumentsInGarden[i][j].radius; })
+						.style("fill", function(d) { return d.monumentsInGarden[i][j].color; });		
+			} else if ($scope.rule == "path") {
+					console.log($scope.rule)
+					coordinates = d3.mouse(this);
+					paths.push(new bench(coordinates[0]-$scope.length/2,coordinates[1]-$scope.height/2, $scope.length, $scope.height, "#443A25"));
+					var i = (Object.size(Gardens[0].pathsInGarden))-1;
+					console.log(i)
+					var hexGroup = svgContainer.append("g");
+					var rectangle = hexGroup.selectAll("rect").data(Gardens).enter().append("rect")
+						.attr("x", function(d) {return d.pathsInGarden[i].x;})
+						.attr("y", function(d) {return d.pathsInGarden[i].y;})
+						.attr("width", function (d) { return d.pathsInGarden[i].width; })
+						.attr("height", function (d) { return d.pathsInGarden[i].height; })
+						.style("fill", function(d) { return d.pathsInGarden[i].color; })
+						.style("opacity", 0.5);
+			}
+		}
+	});	
+</script>
+<div ng-app="myApp" ng-controller="myCtrl">
+      <div>Rule: <select  ng-model="rule" ng-options="x for x in rules"></select>
+		Radius: <select  ng-model="radius" ng-options="x for x in radiuses"></select>
+        Length: <select  ng-model="length" ng-options="x for x in lengths"></select>
+        Height: <select  ng-model="height" ng-options="x for x in heights"></select></div>
+</div>
+ <div id="draw"/>
+</body>
+</html>
